@@ -1,3 +1,5 @@
+library("raster");library("ggplot2");library("spdep")
+
 SM <- function(y,rho,Wmat){
   alpha_hat <- -log(1-rho)
   q. <- 16-1
