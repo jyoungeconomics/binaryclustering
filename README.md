@@ -1,4 +1,8 @@
-This R script contains code to take a spatially-random dummy variable, the nX1 vector denoted "y" (containing k 1's and n-k zeroes), and transforms it into an nX1 vector "z" (also containing k 1's and n-k zeroes) using an nXn spatial weights matrix, "W" (non-standardized binary, indicating which "row" is a neighbor of which "column"), and the spatial autocorrelation coefficient, "rho".
+This R script contains code to take a spatially-random dummy variable, the nX1 vector denoted "y" (containing k 1's and n-k zeroes), and transforms it into an nX1 vector "z" (also containing k 1's and n-k zeroes) using an nXn spatial weights matrix, "W" (binary/non-standardized, indicating which "row" is a neighbor of which "column"), and the spatial autocorrelation coefficient, "rho".
+
+At the end of the code is an example plot of a symmetric grid showing the clustering based on the size of rho. The packages required for this exercise are "spdep", "raster", and "ggplot2".
+
+###################
 
 The method involves some nontrivial matrix algebra, series representations of functions, and partial derivatives. For more detail, see the "MESS" article by LeSage & Pace (2007).
 
