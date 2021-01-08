@@ -1,0 +1,95 @@
+SM <- function(y,rho,Wmat){
+  alpha_hat <- -log(1-rho)
+  q. <- 16-1
+  alpha <- as.matrix(unlist(lapply(c(0:q.),function(x){alpha_hat^x})))
+  v <- as.matrix(unlist(lapply(c(0:q.),function(x){1/factorial(x)})))
+  Y <- as.matrix(cbind(y,Wmat%*%y,(Wmat^2)%*%y,(Wmat^3)%*%y,(Wmat^4)%*%y,(Wmat^5)%*%y,
+                       (Wmat^6)%*%y,(Wmat^7)%*%y,(Wmat^8)%*%y,(Wmat^9)%*%y,
+                       (Wmat^10)%*%y,(Wmat^11)%*%y,(Wmat^12)%*%y,(Wmat^13)%*%y,
+                       (Wmat^14)%*%y,(Wmat^15)%*%y))
+  G <- as.numeric(v)*as.matrix(diag(length(v)))*as.numeric(alpha)
+  SY <- as.matrix(Y)%*%as.matrix(G)
+  y. <- as.vector(rowSums(SY))
+  set.seed(42069)
+  soo <- Wmat%*%runif(length(y.),0.999,1.001)
+  y. <- y.*soo/mean(soo)
+  spy <- ifelse(y.>=y.[order(y.,decreasing = T)][which(y[order(y,decreasing = T)]>0)[length(which(y[order(y,decreasing = T)]>0))]],1,0)
+  return(spy)
+}
+
+#estimated with an AR-lag MLE
+rho_hat <- 0.4669
+#safeguard against excessive clustering nonsense
+rho_hi <- 0.95
+#number of rows, columns of the grid
+n. <- 25
+#number of grid cells
+n <- n.^2
+#how many cells to color in green (will round up to nearest integer)
+n1 <- (25/1000)*n
+# Regular lattice, queen contiguity
+nb <- cell2nb(n.,n.,"queen")
+#binary neighbor coding
+wq <- nb2listw(nb,style = "B")
+#extract teh weights matrix and make it sparse
+W <- as(wq,"CsparseMatrix")
+#ensure the SAME starting point
+set.seed(4206969)
+#e.g., if 25 acres per 1,000 acres of cropland are hemp...
+#randomly assign 1's to 250 of the 10,000 squares, and 0's elsewhere
+y <- ifelse(runif(n,0,n)<=n1,1,0)
+
+#create the raster (an n-dimensional "county")
+for(boogy in 1){
+  r <- rasterToPolygons(x = raster(t(matrix(y,n.,n.))))
+  r@data$polyid <- paste0("grid_",rownames(r@data))
+  r@data$rowid <- paste0("row_",
+                         ifelse(as.numeric(gsub("grid_","",r@data$polyid))%%n.==0,n.,
+                                as.numeric(gsub("grid_","",r@data$polyid))%%n.)[order(ifelse(as.numeric(gsub("grid_","",r@data$polyid))%%n.==0,n.,
+                                                                                             as.numeric(gsub("grid_","",r@data$polyid))%%n.))])
+  r@data$colid <- paste0("col_",rep(x = seq(from = 1,to = n.,length.out = n.),n.))
+  r@data$y <- r@data$layer
+  r@data <- r@data[,-1]
+}
+
+#pick a rho
+r. <- rho_hi
+#make sure you're using the same y as in the raster object
+y.star <- r$y
+#SPATIAL LAG THAT MESS
+y.star <- SM(y = r$y,rho = r.,Wmat = W)
+
+#create some bogus column and row naming scheme (a la Excel)
+for (mmm in 1){
+  indy <- letters
+  for(i in 1:length(letters)){
+    indy <- c(indy,paste0(letters[i],letters))
+  }
+  indy <- indy[1:length(y.star)]
+  m1 <- as.data.frame(t(matrix(data = (r$y),nrow = n.,ncol = n.)))
+  colnames(m1) <- paste("col_", indy[1:nrow(m1)], sep="")
+  m1$indy <- paste("row_", indy[1:nrow(m1)], sep="")
+}
+
+#now plot the thing
+m1 %>%
+  gather(col_name, value, -indy) %>%
+  ggplot(aes(x = factor(indy), col_name, fill = ifelse(y.star>0,
+                                                       "Hemp Plot",
+                                                       "Non-Hemp Plot")))+
+  geom_tile(colour = 'black')+
+  theme_minimal()+
+  geom_tile(alpha=y.star, fill="forest green",colour="black",lwd=0.5)+
+  scale_fill_manual(values = c('Non-Hemp Plot' = 'white', 
+                               'Hemp Plot' = 'forest green'),
+                    name="Plot Type")+
+  ggtitle(label = paste0("Hemp Planting (rho=",r.,") \n",
+                         "",2019," Crop Year"),
+          subtitle = waiver())+ 
+  theme(plot.title = element_text(hjust = 0.5,size = 25),
+        legend.title = element_text(hjust = 0,size = 15),
+        legend.text = element_text(hjust = 0.5,size = 15),
+        axis.text = element_blank(),
+        axis.ticks = element_blank())+
+  labs(x = "<--- West          |          East ---> ", 
+       y = "<--- South       |        North --->")
