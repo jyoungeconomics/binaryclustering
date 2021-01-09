@@ -15,8 +15,8 @@ SM <- function(y,rho,Wmat){
   set.seed(42069)
   soo <- Wmat%*%runif(length(y.),0.999,1.001)
   y. <- y.*soo/mean(soo)
-  spy <- ifelse(y.>=y.[order(y.,decreasing = T)][which(y[order(y,decreasing = T)]>0)[length(which(y[order(y,decreasing = T)]>0))]],1,0)
-  return(spy)
+  z <- ifelse(y.>=y.[order(y.,decreasing = T)][which(y[order(y,decreasing = T)]>0)[length(which(y[order(y,decreasing = T)]>0))]],1,0)
+  return(z)
 }
 
 #estimated with an AR-lag MLE
