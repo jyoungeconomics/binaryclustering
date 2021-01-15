@@ -12,7 +12,6 @@ SM <- function(y,rho,Wmat){
   G <- as.numeric(v)*as.matrix(diag(length(v)))*as.numeric(alpha)
   SY <- as.matrix(Y)%*%as.matrix(G)
   y. <- as.vector(rowSums(SY))
-  set.seed(42069)
   soo <- Wmat%*%runif(length(y.),0.999,1.001)
   y. <- y.*soo/mean(soo)
   z <- ifelse(y.>=y.[order(y.,decreasing = T)][which(y[order(y,decreasing = T)]>0)[length(which(y[order(y,decreasing = T)]>0))]],1,0)
